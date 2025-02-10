@@ -142,6 +142,8 @@ static void nr_drupal8_add_method_callback_before_after_clean(
     nrspecialfn_t clean_callback) {
   zend_function* function = NULL;
 
+  nrl_always("%s start", __FUNCTION__);
+
   if (NULL == ce) {
     nrl_verbosedebug(NRL_FRAMEWORK, "Drupal 8: got NULL class entry in %s",
                      __func__);
@@ -169,6 +171,7 @@ static void nr_drupal8_add_method_callback_before_after_clean(
 
     nr_free(class_method);
   }
+  nrl_always("%s end", __FUNCTION__);
 }
 #endif  // OAPI
 
@@ -401,6 +404,7 @@ NR_PHP_WRAPPER(nr_drupal_hook_attribute_construct) {
   zval* module = NULL;
 
   NR_PHP_WRAPPER_REQUIRE_FRAMEWORK(NR_FW_DRUPAL8);
+
   hook = nr_php_arg_get(1, NR_EXECUTE_ORIG_ARGS);
   method = nr_php_arg_get(2, NR_EXECUTE_ORIG_ARGS);
   module = nr_php_arg_get(3, NR_EXECUTE_ORIG_ARGS);
@@ -559,7 +563,7 @@ NR_PHP_WRAPPER(nr_drupal94_invoke_all_with) {
 #endif  // not OAPI
 
   (void)wraprec;
-
+  nrl_always("%s start", __FUNCTION__);
   NR_PHP_WRAPPER_REQUIRE_FRAMEWORK(NR_FW_DRUPAL8);
 
   hook = nr_php_arg_get(1, NR_EXECUTE_ORIG_ARGS TSRMLS_CC);
@@ -604,6 +608,7 @@ NR_PHP_WRAPPER(nr_drupal94_invoke_all_with) {
 #endif  // not OAPI
 
 leave:;
+  nrl_always("%s end", __FUNCTION__);
 #if ZEND_MODULE_API_NO < ZEND_8_0_X_API_NO \
     || defined OVERWRITE_ZEND_EXECUTE_DATA
   /* for OAPI, the _after callback handles this free */
@@ -616,13 +621,17 @@ NR_PHP_WRAPPER_END
     && !defined OVERWRITE_ZEND_EXECUTE_DATA
 NR_PHP_WRAPPER(nr_drupal94_invoke_all_with_after) {
   (void)wraprec;
+  nrl_always("%s start", __FUNCTION__);
   nr_drupal_invoke_all_hook_stacks_pop();
+  nrl_always("%s end", __FUNCTION__);
 }
 NR_PHP_WRAPPER_END
 
 NR_PHP_WRAPPER(nr_drupal94_invoke_all_with_clean) {
   (void)wraprec;
+  nrl_always("%s start", __FUNCTION__);
   nr_drupal_invoke_all_hook_stacks_pop();
+  nrl_always("%s end", __FUNCTION__);
 }
 NR_PHP_WRAPPER_END
 #endif  // OAPI
@@ -633,6 +642,7 @@ NR_PHP_WRAPPER_END
 NR_PHP_WRAPPER(nr_drupal8_module_handler) {
   zend_class_entry* ce = NULL;
   zval** retval_ptr = NR_GET_RETURN_VALUE_PTR;
+  nrl_always("%s start", __FUNCTION__);
 
   NR_UNUSED_SPECIALFN;
   (void)wraprec;
@@ -668,6 +678,7 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
   nr_drupal8_add_method_callback(ce, NR_PSTR("invokeallwith"),
                                  nr_drupal94_invoke_all_with TSRMLS_CC);
 #endif
+  nrl_always("%s end", __FUNCTION__);
 }
 NR_PHP_WRAPPER_END
 
@@ -825,9 +836,6 @@ void nr_drupal8_enable(TSRMLS_D) {
                             nr_drupal_exception);
   // clang-format on
 
-  nr_php_wrap_user_function(
-      NR_PSTR("Drupal\\Core\\Hook\\Attribute\\Hook::__construct"),
-      nr_drupal_hook_attribute_construct);
   /*
    * The drupal_modules config setting controls instrumentation of modules,
    * hooks, and views.
