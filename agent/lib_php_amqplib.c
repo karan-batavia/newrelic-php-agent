@@ -90,9 +90,14 @@
  */
 static void nr_php_amqplib_ensure_class() {
   int result = FAILURE;
+  zend_class_entry* class_entry = NULL;
 
-  result = zend_eval_string("class_exists('PhpAmqpLib\\Channel\\AMQPChannel');",
-                            NULL, "Get nr_php_amqplib_class_exists");
+  class_entry = nr_php_find_class("PhpAmqpLib\\Channel\\AMQPChannel");
+  if (NULL == class_entry) {
+    result
+        = zend_eval_string("class_exists('PhpAmqpLib\\Channel\\AMQPChannel');",
+                           NULL, "Get nr_php_amqplib_class_exists");
+  }
   /*
    * We don't need to check anything else at this point. If this fails, there's
    * nothing else we can do anyway.
@@ -113,27 +118,39 @@ void nr_php_amqplib_handle_version() {
   char* version = NULL;
   zval retval_zpd;
   int result = FAILURE;
+  zval* zval_version = NULL;
+  zend_class_entry* class_entry = NULL;
 
-  result = zend_eval_string(
-      "(function() {"
-      "     $nr_php_amqplib_version = null;"
-      "     try {"
-      "          $nr_php_amqplib_version = PhpAmqpLib\\Package::VERSION;"
-      "     } catch (Throwable $e) {"
-      "     }"
-      "     return $nr_php_amqplib_version;"
-      "})();",
-      &retval_zpd, "Get nr_php_amqplib_version");
+  class_entry = nr_php_find_class("PhpAmqpLib\\Package");
+  if (NULL != class_entry) {
+    zval_version = nr_php_get_class_constant(class_entry, "VERSION");
+    if (nr_php_is_zval_valid_string(zval_version)) {
+      version = Z_STRVAL_P(zval_version);
+    }
+  } else {
+    result = zend_eval_string(
+        "(function() {"
+        "     $nr_php_amqplib_version = null;"
+        "     try {"
+        "          $nr_php_amqplib_version = PhpAmqpLib\\Package::VERSION;"
+        "     } catch (Throwable $e) {"
+        "     }"
+        "     return $nr_php_amqplib_version;"
+        "})();",
+        &retval_zpd, "Get nr_php_amqplib_version");
 
-  /* See if we got a non-empty/non-null string for version. */
-  if (SUCCESS == result) {
-    if (nr_php_is_zval_valid_string(&retval_zpd)) {
-      version = Z_STRVAL(retval_zpd);
+    /* See if we got a non-empty/non-null string for version. */
+    if (SUCCESS == result) {
+      if (nr_php_is_zval_valid_string(&retval_zpd)) {
+        version = Z_STRVAL(retval_zpd);
+      }
     }
   }
 
   if (NRINI(vulnerability_management_package_detection_enabled)) {
-    /* Add php package to transaction */
+    /*
+     * Add php package to transaction, if version is NULL it is set to UNKNOWN
+     */
     nr_txn_add_php_package(NRPRG(txn), PHP_PACKAGE_NAME, version);
   }
 
@@ -141,6 +158,7 @@ void nr_php_amqplib_handle_version() {
                                                version);
 
   zval_dtor(&retval_zpd);
+  nr_php_zval_free(&zval_version);
 }
 
 /*
@@ -547,7 +565,6 @@ static inline void nr_php_amqplib_retrieve_dt_headers(zval* amqp_msg) {
 
 NR_PHP_WRAPPER(nr_rabbitmq_basic_publish_before) {
   zval* amqp_msg = NULL;
-  (void)wraprec;
 
   amqp_msg = nr_php_get_user_func_arg(1, NR_EXECUTE_ORIG_ARGS);
   /*
@@ -569,7 +586,6 @@ NR_PHP_WRAPPER(nr_rabbitmq_basic_publish) {
       .message_action = NR_SPANKIND_PRODUCER,
       .messaging_system = RABBITMQ_MESSAGING_SYSTEM,
   };
-
   (void)wraprec;
 
 #if ZEND_MODULE_API_NO < ZEND_8_0_X_API_NO /* PHP8.0+ */
@@ -793,15 +809,6 @@ end:
 NR_PHP_WRAPPER_END
 
 void nr_php_amqplib_enable() {
-  /*
-   * Set the UNKNOWN package first, so it doesn't overwrite what we find with
-   * nr_php_amqplib_handle_version.
-   */
-  if (NRINI(vulnerability_management_package_detection_enabled)) {
-    nr_txn_add_php_package(NRPRG(txn), PHP_PACKAGE_NAME,
-                           PHP_PACKAGE_VERSION_UNKNOWN);
-  }
-
   /* Extract the version */
   nr_php_amqplib_handle_version();
   nr_php_amqplib_ensure_class();
