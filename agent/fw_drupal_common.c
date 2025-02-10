@@ -56,11 +56,14 @@ NR_PHP_WRAPPER(nr_drupal_wrap_module_hook) {
   }
 
   NR_PHP_WRAPPER_CALL;
+  nrl_always("%s: checking NULL hook && module", __FUNCTION__);
+  nrl_always("%s: hook = %s", __FUNCTION__, wraprec->drupal_hook);
+  nrl_always("%s: module = %s", __FUNCTION__, wraprec->drupal_module);
 
   /*
-   * We can't infer the module and hook names from the function name, since a
-   * function such as a_b_c is ambiguous (is the module a or a_b?). Instead,
-   * we'll see if they're defined in the wraprec.
+   * We can't infer the module and hook names from the function name, since
+   * a function such as a_b_c is ambiguous (is the module a or a_b?).
+   * Instead, we'll see if they're defined in the wraprec.
    */
   if ((NULL != wraprec->drupal_hook) && (NULL != wraprec->drupal_module)) {
     nrl_always("%s: creating metrics for hook %s", __FUNCTION__,
@@ -93,9 +96,10 @@ nruserfn_t* nr_php_wrap_user_function_drupal(const char* name,
     nr_free(wraprec->drupal_hook);
     nr_free(wraprec->drupal_module);
 
-    nrl_always("%s: reallocating %s", __FUNCTION__, hook);
+    nrl_always("%s: reallocating hook %s", __FUNCTION__, hook);
     wraprec->drupal_hook = nr_strndup(hook, hook_len);
     wraprec->drupal_hook_len = hook_len;
+    nrl_always("%s: reallocating module %s", __FUNCTION__, module);
     wraprec->drupal_module = nr_strndup(module, module_len);
     wraprec->drupal_module_len = module_len;
   }
