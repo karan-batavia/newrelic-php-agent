@@ -521,6 +521,7 @@ NR_PHP_WRAPPER(nr_drupal94_invoke_all_with_callback) {
   NR_PHP_WRAPPER_REQUIRE_FRAMEWORK(NR_FW_DRUPAL8);
   module = nr_php_arg_get(2, NR_EXECUTE_ORIG_ARGS TSRMLS_CC);
   if (!nr_php_is_zval_non_empty_string(module)) {
+    nrl_always("%s: EMPTY MODULE", __FUNCTION__);
     goto leave;
   }
 
@@ -572,9 +573,11 @@ NR_PHP_WRAPPER(nr_drupal94_invoke_all_with) {
     && !defined OVERWRITE_ZEND_EXECUTE_DATA
     nr_php_arg_release(&hook);
 #endif  // OAPI
+    nrl_always("%s: empty hook", __FUNCTION__);
     goto leave;
   }
 
+  nrl_always("%s: hook value = %s", __FUNCTION__, Z_STRVAL_P(hook));
 #if ZEND_MODULE_API_NO >= ZEND_8_0_X_API_NO \
     && !defined OVERWRITE_ZEND_EXECUTE_DATA
   nr_drupal_invoke_all_hook_stacks_push(hook);
@@ -587,6 +590,7 @@ NR_PHP_WRAPPER(nr_drupal94_invoke_all_with) {
   NRPRG(check_cufa) = true;
 #endif  // OAPI
   callback = nr_php_arg_get(2, NR_EXECUTE_ORIG_ARGS TSRMLS_CC);
+  nrl_always("%s: callback = %s", __FUNCTION__, callback);
 
   /* This instrumentation will fail if callback has already been wrapped
    * with a special instrumentation callback in a different context.

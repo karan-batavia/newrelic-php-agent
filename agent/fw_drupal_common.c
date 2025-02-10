@@ -104,9 +104,10 @@ void nr_drupal_hook_instrument(const char* module,
   size_t function_name_len = 0;
   char* function_name = NULL;
 
+  nrl_always("%s: hook = %s", __FUNCTION__, hook);
   /*
-   * Construct the name of the function we need to instrument from the module
-   * and hook names.
+   * Construct the name of the function we need to instrument from the
+   * module and hook names.
    */
   function_name_len = module_len + hook_len + 2;
   function_name = nr_alloca(function_name_len);
@@ -177,8 +178,9 @@ nr_status_t module_invoke_all_parse_module_and_hook_from_strings(
     nrl_verbosedebug(NRL_FRAMEWORK,
                      "%s: module len is %d; ; "
                      "hook='%.*s'; module_hook='%.*s'",
-                     __func__, (int)module_len, NRSAFELEN(hook_len), NRSAFESTR(hook),
-                     NRSAFELEN(module_hook_len), NRSAFESTR(module_hook));
+                     __func__, (int)module_len, NRSAFELEN(hook_len),
+                     NRSAFESTR(hook), NRSAFELEN(module_hook_len),
+                     NRSAFESTR(module_hook));
 
     return NR_FAILURE;
   }
