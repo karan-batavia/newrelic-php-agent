@@ -12,6 +12,7 @@
 #include "fw_drupal_common.h"
 #include "fw_hooks.h"
 #include "fw_support.h"
+#include "util_logging.h"
 #include "util_memory.h"
 #include "util_signals.h"
 #include "util_strings.h"
@@ -50,6 +51,7 @@ int nr_drupal_is_framework(nrframework_t fw) {
  */
 NR_PHP_WRAPPER(nr_drupal_wrap_module_hook) {
   if (!nr_drupal_is_framework(NRPRG(current_framework))) {
+    nrl_always("%s: not valid framework, bailing", __FUNCTION__);
     NR_PHP_WRAPPER_LEAVE;
   }
 
@@ -61,6 +63,8 @@ NR_PHP_WRAPPER(nr_drupal_wrap_module_hook) {
    * we'll see if they're defined in the wraprec.
    */
   if ((NULL != wraprec->drupal_hook) && (NULL != wraprec->drupal_module)) {
+    nrl_always("%s: creating metrics for hook %s", __FUNCTION__,
+               wraprec->drupal_hook);
     nr_drupal_create_metric(auto_segment, NR_PSTR(NR_DRUPAL_MODULE_PREFIX),
                             wraprec->drupal_module, wraprec->drupal_module_len);
     nr_drupal_create_metric(auto_segment, NR_PSTR(NR_DRUPAL_HOOK_PREFIX),
@@ -85,9 +89,11 @@ nruserfn_t* nr_php_wrap_user_function_drupal(const char* name,
      * As wraprecs can be reused, we need to free any previous hook or module
      * to avoid memory leaks.
      */
+    nrl_always("%s: freeing %s", __FUNCTION__, wraprec->drupal_hook);
     nr_free(wraprec->drupal_hook);
     nr_free(wraprec->drupal_module);
 
+    nrl_always("%s: reallocating %s", __FUNCTION__, hook);
     wraprec->drupal_hook = nr_strndup(hook, hook_len);
     wraprec->drupal_hook_len = hook_len;
     wraprec->drupal_module = nr_strndup(module, module_len);
@@ -104,7 +110,7 @@ void nr_drupal_hook_instrument(const char* module,
   size_t function_name_len = 0;
   char* function_name = NULL;
 
-  nrl_always("%s: hook = %s", __FUNCTION__, hook);
+  nrl_always("%s: hook = %s, module = %s", __FUNCTION__, hook, module);
   /*
    * Construct the name of the function we need to instrument from the
    * module and hook names.
@@ -119,6 +125,7 @@ void nr_drupal_hook_instrument(const char* module,
   /*
    * Actually instrument the function.
    */
+  nrl_always("%s : wrapping user fn %s", __FUNCTION__, function_name);
   nr_php_wrap_user_function_drupal(function_name, function_name_len - 1, module,
                                    module_len, hook, hook_len TSRMLS_CC);
 }
