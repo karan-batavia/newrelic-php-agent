@@ -666,7 +666,7 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
   }
 
   ce = Z_OBJCE_P(*retval_ptr);
-
+  nrl_always("module handler class entry: %s", nr_php_class_entry_name(ce));
   nr_drupal8_add_method_callback(ce, NR_PSTR("getimplementations"),
                                  nr_drupal8_post_get_implementations TSRMLS_CC);
   nr_drupal8_add_method_callback(ce, NR_PSTR("implementshook"),
