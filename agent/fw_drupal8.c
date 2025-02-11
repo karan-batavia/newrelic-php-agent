@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "ext/standard/php_var.h"
 #include "php_agent.h"
 #include "php_call.h"
 #include "php_hash.h"
@@ -667,6 +668,8 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
   }
 
   ce = Z_OBJCE_P(*retval_ptr);
+
+  nrl_always("moduleHandler ce: %s", php_var_dump(ce, 0));
 
   nr_drupal8_add_method_callback(ce, NR_PSTR("getimplementations"),
                                  nr_drupal8_post_get_implementations TSRMLS_CC);
