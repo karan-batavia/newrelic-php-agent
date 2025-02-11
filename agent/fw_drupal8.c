@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "ext/standard/php_var.h"
 #include "php_agent.h"
 #include "php_call.h"
 #include "php_hash.h"
@@ -19,7 +18,6 @@
 #include "util_logging.h"
 #include "util_memory.h"
 #include "util_strings.h"
-#include "zend_types.h"
 
 #define PHP_PACKAGE_NAME "drupal/core"
 
@@ -591,7 +589,7 @@ NR_PHP_WRAPPER(nr_drupal94_invoke_all_with) {
   NRPRG(check_cufa) = true;
 #endif  // OAPI
   callback = nr_php_arg_get(2, NR_EXECUTE_ORIG_ARGS TSRMLS_CC);
-  nrl_always("%s: callback = %s", __FUNCTION__, callback);
+  nrl_always("%s: callback = %s", __FUNCTION__, Z_STRVAL_P(callback));
 
   /* This instrumentation will fail if callback has already been wrapped
    * with a special instrumentation callback in a different context.
@@ -668,8 +666,6 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
   }
 
   ce = Z_OBJCE_P(*retval_ptr);
-
-  nrl_always("moduleHandler ce: %s", php_var_dump(ce, 0));
 
   nr_drupal8_add_method_callback(ce, NR_PSTR("getimplementations"),
                                  nr_drupal8_post_get_implementations TSRMLS_CC);
