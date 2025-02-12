@@ -12,6 +12,7 @@
 #include "fw_drupal_common.h"
 #include "fw_hooks.h"
 #include "fw_support.h"
+#include "php_zval.h"
 #include "util_logging.h"
 #include "util_memory.h"
 #include "util_signals.h"
@@ -140,41 +141,51 @@ void nr_drupal_hook_instrument(const char* module,
     "   } catch (Throwable $e) {}"
     " }"
     "}";
-  //clang-format on
+  // clang-format on
 
   retval = zend_eval_string(nr_injection_fn, NULL, "newrelic/Drupal");
 
   if (SUCCESS != retval) {
-    nrl_warning(NRL_FRAMEWORK, "%s: Failed to inject hook instrumentation code", __func__);
+    nrl_warning(NRL_FRAMEWORK, "%s: Failed to inject hook instrumentation code",
+                __func__);
+  } else {
+    nrl_always("%s: hook = %s, module = %s", __FUNCTION__, hook, module);
+    hook_arg = nr_php_zval_alloc();
+    nr_php_zval_str(hook_arg, hook);
+    module_arg = nr_php_zval_alloc();
+    nr_php_zval_str(module_arg, module);
+
+    if (nr_php_find_function("newrelic_get_hooks")) {
+      hookpath = nr_php_call(NULL, "newrelic_get_hooks", hook_arg, module_arg);
+      nrl_always("newrelic_get_hooks retval = %s", Z_STRVAL_P(hookpath));
+    } else {
+      nrl_warning(NRL_FRAMEWORK, "ERROR FINDING newrelic_get_hooks");
+    }
   }
 
-  nrl_always("%s: hook = %s, module = %s", __FUNCTION__, hook, module);
-  hook_arg = nr_php_zval_alloc();
-  nr_php_zval_str(hook_arg, hook);
-  module_arg = nr_php_zval_alloc();
-  nr_php_zval_str(module_arg, module);
+  if (nr_php_is_zval_non_empty_string(hookpath)) {
+    function_name = nr_strndup(Z_STRVAL_P(hookpath), Z_STRLEN_P(hookpath));
+    function_name_len = nr_strlen(function_name);
 
-  if (nr_php_find_function("newrelic_get_hooks")) {
-    hookpath = nr_php_call(NULL, "newrelic_get_hooks", hook_arg, module_arg);
-    nrl_always("newrelic_get_hooks retval = %s", Z_STRVAL_P(hookpath));
+    nrl_always("function_name: %s, function_name_len: %zu", function_name,
+               function_name_len);
   } else {
-    nrl_warning(NRL_FRAMEWORK, "ERROR FINDING newrelic_get_hooks");
+    nrl_always("failed to get value from newrelic_get_hooks");
+    /*
+     * Construct the name of the function we need to instrument from the
+     * module and hook names.
+     */
+    function_name_len = module_len + hook_len + 2;
+    function_name = nr_alloca(function_name_len);
+
+    nr_strxcpy(function_name, module, module_len);
+    nr_strcat(function_name, "_");
+    nr_strncat(function_name, hook, hook_len);
   }
 
   nr_php_zval_free(&hook_arg);
   nr_php_zval_free(&module_arg);
   nr_php_zval_free(&hookpath);
-  /*
-   * Construct the name of the function we need to instrument from the
-   * module and hook names.
-   */
-  function_name_len = module_len + hook_len + 2;
-  function_name = nr_alloca(function_name_len);
-
-  nr_strxcpy(function_name, module, module_len);
-  nr_strcat(function_name, "_");
-  nr_strncat(function_name, hook, hook_len);
-
   /*
    * Actually instrument the function.
    */
