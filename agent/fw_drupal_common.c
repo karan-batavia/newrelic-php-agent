@@ -152,13 +152,12 @@ void nr_drupal_hook_instrument(const char* module,
   module_arg = nr_php_zval_alloc();
   nr_php_zval_str(module_arg, module);
 
-  if (nr_php_find_function("\\newrelic\\drupal\\newrelic_get_hooks")) {
+  if (nr_php_find_function("newrelic_get_hooks")) {
     hookpath = nr_php_call(NULL, "\\newrelic\\drupal\\newrelic_get_hooks", hook_arg, module_arg);
+    nrl_always("newrelic_get_hooks retval = %s", Z_STRVAL_P(hookpath));
   } else {
     nrl_warning(NRL_FRAMEWORK, "ERROR FINDING newrelic_get_hooks");
   }
-
-  nrl_always("newrelic_get_hooks retval = %s", Z_STRVAL_P(hookpath));
 
   nr_php_zval_free(&hook_arg);
   nr_php_zval_free(&module_arg);
