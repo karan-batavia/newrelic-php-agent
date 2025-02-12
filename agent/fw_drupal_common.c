@@ -132,7 +132,7 @@ void nr_drupal_hook_instrument(const char* module,
     "       $listener_class = get_class($listener[0]);"
     "       $arr = explode('\\\\', $listener_class);"
     "       if ($arr[1] === $module) {"
-    "         $path = implode('\\\\\\\\', $arr);"
+    "         $path = implode('\\\\', $arr);"
     "         $path .= '::' . $listener[1];"
     "         return $path;"
     "       }"
