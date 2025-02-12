@@ -190,8 +190,9 @@ void nr_drupal_hook_instrument(const char* module,
    * Actually instrument the function.
    */
   nrl_always("%s : wrapping user fn %s", __FUNCTION__, function_name);
-  nr_php_wrap_user_function_drupal(function_name, function_name_len - 1, module,
-                                   module_len, hook, hook_len TSRMLS_CC);
+  nr_php_wrap_user_function_drupal(function_name, nr_strlen(function_name),
+                                   module, module_len, hook,
+                                   hook_len TSRMLS_CC);
 }
 
 nr_status_t module_invoke_all_parse_module_and_hook_from_strings(
