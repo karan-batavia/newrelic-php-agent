@@ -16,6 +16,7 @@
 #include "util_memory.h"
 #include "util_signals.h"
 #include "util_strings.h"
+#include "zend_types.h"
 
 int nr_drupal_do_view_execute(const char* name,
                               int name_len,
@@ -113,8 +114,55 @@ void nr_drupal_hook_instrument(const char* module,
                                size_t hook_len TSRMLS_DC) {
   size_t function_name_len = 0;
   char* function_name = NULL;
+  int retval = FAILURE;
+  zval* hookpath = NULL;
+  zval* hook_arg = NULL;
+  zval* module_arg = NULL;
+
+  // clang-format off
+  const char* nr_injection_fn =
+    "namespace newrelic\\Drupal;"
+
+    "if (!function_exists('newrelic\\Drupal\\newrelic_get_hooks')) {"
+    " function newrelic_get_hooks(string $hook, $module) {"
+    "   try {"
+    "     foreach(\\Drupal::service('event_dispatcher')->getListeners('drupal_hook.$hook') as $listener){"
+    "       if (!is_array($listener) || !is_object($listener[0])) {"
+    "         continue;"
+    "       }"
+    "       $listener_class = get_class($listener[0]);"
+    "       if (str_contains($listener_class, $module)) {"
+    "         return $listener_class . '::' . $listener[1];"
+    "       }"
+    "     }"
+    "   } catch (Throwable $e) {}"
+    " }"
+    "}";
+  //clang-format on
+
+  retval = zend_eval_string(nr_injection_fn, NULL, "newrelic/Drupal");
+
+  if (SUCCESS != retval) {
+    nrl_warning(NRL_FRAMEWORK, "%s: Failed to inject hook instrumentation code", __func__);
+  }
 
   nrl_always("%s: hook = %s, module = %s", __FUNCTION__, hook, module);
+  hook_arg = nr_php_zval_alloc();
+  nr_php_zval_str(hook_arg, hook);
+  module_arg = nr_php_zval_alloc();
+  nr_php_zval_str(module_arg, module);
+
+  if (nr_php_find_function("\\newrelic\\drupal\\newrelic_get_hooks")) {
+    hookpath = nr_php_call(NULL, "\\newrelic\\drupal\\newrelic_get_hooks", hook_arg, module_arg);
+  } else {
+    nrl_warning(NRL_FRAMEWORK, "ERROR FINDING newrelic_get_hooks");
+  }
+
+  nrl_always("newrelic_get_hooks retval = %s", Z_STRVAL_P(hookpath));
+
+  nr_php_zval_free(&hook_arg);
+  nr_php_zval_free(&module_arg);
+  nr_php_zval_free(&hookpath);
   /*
    * Construct the name of the function we need to instrument from the
    * module and hook names.
