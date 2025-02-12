@@ -133,7 +133,7 @@ void nr_drupal_hook_instrument(const char* module,
     "         return $listener_class . '::' . $listener[1];"
     "       }"
     "     }"
-    "     return 'notfound'"
+    "     return 'notfound';"
     "   } catch (Throwable $e) {}"
     " }"
     "}";
