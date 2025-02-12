@@ -124,7 +124,7 @@ void nr_drupal_hook_instrument(const char* module,
     "if (!function_exists('newrelic_get_hooks')) {"
     " function newrelic_get_hooks(string $hook, $module) {"
     "   try {"
-    "     foreach(\\Drupal::service('event_dispatcher')->getListeners('drupal_hook.$hook') as $listener){"
+    "     foreach(\\Drupal::service('event_dispatcher')->getListeners('drupal_hook' . $hook) as $listener){"
     "       if (!is_array($listener) || !is_object($listener[0])) {"
     "         continue;"
     "       }"
