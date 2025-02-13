@@ -429,7 +429,6 @@ void nr_aws_lambda_invoke(NR_EXECUTE_PROTO, nr_segment_cloud_attrs_t* cloud_attr
   }
   if (nr_strempty(accountID)) {
     accountID = NRINI(aws_account_id);
-    accountID = "012345";
   }
   if (nr_strempty(region)) {
     region_zval = nr_php_call(this_obj, "getRegion");
