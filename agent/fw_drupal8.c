@@ -19,6 +19,8 @@
 #include "util_memory.h"
 #include "util_strings.h"
 
+#include "ext/standard/php_var.h"
+
 #define PHP_PACKAGE_NAME "drupal/core"
 
 NR_PHP_WRAPPER(nr_drupal_exception) {
@@ -66,8 +68,7 @@ NR_PHP_WRAPPER(nr_drupal_exception) {
 
   if (NR_SUCCESS
       != nr_php_error_record_exception(NRPRG(txn), exception, priority, true,
-                                       NULL,
-                                       &NRPRG(exception_filters))) {
+                                       NULL, &NRPRG(exception_filters))) {
     nrl_verbosedebug(NRL_TXN, "Drupal: unable to record exception");
   }
 
@@ -134,13 +135,15 @@ static void nr_drupal8_add_method_callback(const zend_class_entry* ce,
 #if ZEND_MODULE_API_NO >= ZEND_8_0_X_API_NO \
     && !defined OVERWRITE_ZEND_EXECUTE_DATA
 static void nr_drupal8_add_method_callback_before_after_clean(
-                                           const zend_class_entry* ce,
-                                           const char* method,
-                                           size_t method_len,
-                                           nrspecialfn_t before_callback,
-                                           nrspecialfn_t after_callback,
-                                           nrspecialfn_t clean_callback) {
+    const zend_class_entry* ce,
+    const char* method,
+    size_t method_len,
+    nrspecialfn_t before_callback,
+    nrspecialfn_t after_callback,
+    nrspecialfn_t clean_callback) {
   zend_function* function = NULL;
+
+  nrl_always("%s start", __FUNCTION__);
 
   if (NULL == ce) {
     nrl_verbosedebug(NRL_FRAMEWORK, "Drupal 8: got NULL class entry in %s",
@@ -164,13 +167,14 @@ static void nr_drupal8_add_method_callback_before_after_clean(
         nr_php_class_entry_name(ce), NRSAFELEN(method_len), method);
 
     nr_php_wrap_user_function_before_after_clean(
-                              class_method, nr_strlen(class_method),
-                              before_callback, after_callback, clean_callback);
+        class_method, nr_strlen(class_method), before_callback, after_callback,
+        clean_callback);
 
     nr_free(class_method);
   }
+  nrl_always("%s end", __FUNCTION__);
 }
-#endif // OAPI
+#endif  // OAPI
 
 /*
  * Purpose : Check if the given function or method is in the current call
@@ -496,13 +500,13 @@ NR_PHP_WRAPPER(nr_drupal94_invoke_all_with_callback) {
   NR_PHP_WRAPPER_REQUIRE_FRAMEWORK(NR_FW_DRUPAL8);
   module = nr_php_arg_get(2, NR_EXECUTE_ORIG_ARGS TSRMLS_CC);
   if (!nr_php_is_zval_non_empty_string(module)) {
+    nrl_always("%s: EMPTY MODULE", __FUNCTION__);
     goto leave;
   }
 
 #if ZEND_MODULE_API_NO >= ZEND_8_0_X_API_NO \
     && !defined OVERWRITE_ZEND_EXECUTE_DATA
-  zval* curr_hook
-      = (zval*)nr_stack_get_top(&NRPRG(drupal_invoke_all_hooks));
+  zval* curr_hook = (zval*)nr_stack_get_top(&NRPRG(drupal_invoke_all_hooks));
   if (UNEXPECTED(!nr_php_is_zval_non_empty_string(curr_hook))) {
     nrl_verbosedebug(NRL_FRAMEWORK,
                      "%s: cannot extract hook name from global stack",
@@ -515,7 +519,7 @@ NR_PHP_WRAPPER(nr_drupal94_invoke_all_with_callback) {
   nr_drupal_hook_instrument(Z_STRVAL_P(module), Z_STRLEN_P(module),
                             NRPRG(drupal_invoke_all_hook),
                             NRPRG(drupal_invoke_all_hook_len) TSRMLS_CC);
-#endif // OAPI
+#endif  // OAPI
 
 leave:
   NR_PHP_WRAPPER_CALL;
@@ -536,10 +540,10 @@ NR_PHP_WRAPPER(nr_drupal94_invoke_all_with) {
     || defined OVERWRITE_ZEND_EXECUTE_DATA
   char* prev_hook = NULL;
   int prev_hook_len;
-#endif // not OAPI
+#endif  // not OAPI
 
   (void)wraprec;
-
+  nrl_always("%s start", __FUNCTION__);
   NR_PHP_WRAPPER_REQUIRE_FRAMEWORK(NR_FW_DRUPAL8);
 
   hook = nr_php_arg_get(1, NR_EXECUTE_ORIG_ARGS TSRMLS_CC);
@@ -547,10 +551,12 @@ NR_PHP_WRAPPER(nr_drupal94_invoke_all_with) {
 #if ZEND_MODULE_API_NO >= ZEND_8_0_X_API_NO \
     && !defined OVERWRITE_ZEND_EXECUTE_DATA
     nr_php_arg_release(&hook);
-#endif // OAPI
+#endif  // OAPI
+    nrl_always("%s: empty hook", __FUNCTION__);
     goto leave;
   }
 
+  nrl_always("%s: hook value = %s", __FUNCTION__, Z_STRVAL_P(hook));
 #if ZEND_MODULE_API_NO >= ZEND_8_0_X_API_NO \
     && !defined OVERWRITE_ZEND_EXECUTE_DATA
   nr_drupal_invoke_all_hook_stacks_push(hook);
@@ -561,8 +567,9 @@ NR_PHP_WRAPPER(nr_drupal94_invoke_all_with) {
       = nr_strndup(Z_STRVAL_P(hook), Z_STRLEN_P(hook));
   NRPRG(drupal_invoke_all_hook_len) = Z_STRLEN_P(hook);
   NRPRG(check_cufa) = true;
-#endif // OAPI
+#endif  // OAPI
   callback = nr_php_arg_get(2, NR_EXECUTE_ORIG_ARGS TSRMLS_CC);
+  nrl_always("%s: callback = %s", __FUNCTION__, Z_STRVAL_P(callback));
 
   /* This instrumentation will fail if callback has already been wrapped
    * with a special instrumentation callback in a different context.
@@ -581,14 +588,15 @@ NR_PHP_WRAPPER(nr_drupal94_invoke_all_with) {
   if (NULL == NRPRG(drupal_invoke_all_hook)) {
     NRPRG(check_cufa) = false;
   }
-#endif // not OAPI
+#endif  // not OAPI
 
-leave: ;
+leave:;
+  nrl_always("%s end", __FUNCTION__);
 #if ZEND_MODULE_API_NO < ZEND_8_0_X_API_NO \
     || defined OVERWRITE_ZEND_EXECUTE_DATA
   /* for OAPI, the _after callback handles this free */
   nr_php_arg_release(&hook);
-#endif // not OAPI
+#endif  // not OAPI
 }
 NR_PHP_WRAPPER_END
 
@@ -596,16 +604,20 @@ NR_PHP_WRAPPER_END
     && !defined OVERWRITE_ZEND_EXECUTE_DATA
 NR_PHP_WRAPPER(nr_drupal94_invoke_all_with_after) {
   (void)wraprec;
+  nrl_always("%s start", __FUNCTION__);
   nr_drupal_invoke_all_hook_stacks_pop();
+  nrl_always("%s end", __FUNCTION__);
 }
 NR_PHP_WRAPPER_END
 
 NR_PHP_WRAPPER(nr_drupal94_invoke_all_with_clean) {
   (void)wraprec;
+  nrl_always("%s start", __FUNCTION__);
   nr_drupal_invoke_all_hook_stacks_pop();
+  nrl_always("%s end", __FUNCTION__);
 }
 NR_PHP_WRAPPER_END
-#endif // OAPI
+#endif  // OAPI
 
 /*
  * Purpose : Wrap the invoke() method of the module handler instance in use.
@@ -613,6 +625,7 @@ NR_PHP_WRAPPER_END
 NR_PHP_WRAPPER(nr_drupal8_module_handler) {
   zend_class_entry* ce = NULL;
   zval** retval_ptr = NR_GET_RETURN_VALUE_PTR;
+  nrl_always("%s start", __FUNCTION__);
 
   NR_UNUSED_SPECIALFN;
   (void)wraprec;
@@ -633,7 +646,7 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
   }
 
   ce = Z_OBJCE_P(*retval_ptr);
-
+  nrl_always("module handler class entry: %s", nr_php_class_entry_name(ce));
   nr_drupal8_add_method_callback(ce, NR_PSTR("getimplementations"),
                                  nr_drupal8_post_get_implementations TSRMLS_CC);
   nr_drupal8_add_method_callback(ce, NR_PSTR("implementshook"),
@@ -642,14 +655,40 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
 #if ZEND_MODULE_API_NO >= ZEND_8_0_X_API_NO \
     && !defined OVERWRITE_ZEND_EXECUTE_DATA
   nr_drupal8_add_method_callback_before_after_clean(
-                                 ce, NR_PSTR("invokeallwith"),
-                                 nr_drupal94_invoke_all_with,
-                                 nr_drupal94_invoke_all_with_after,
-                                 nr_drupal94_invoke_all_with_clean);
+      ce, NR_PSTR("invokeallwith"), nr_drupal94_invoke_all_with,
+      nr_drupal94_invoke_all_with_after, nr_drupal94_invoke_all_with_clean);
 #else
   nr_drupal8_add_method_callback(ce, NR_PSTR("invokeallwith"),
                                  nr_drupal94_invoke_all_with TSRMLS_CC);
 #endif
+  nrl_always("%s end", __FUNCTION__);
+}
+NR_PHP_WRAPPER_END
+
+NR_PHP_WRAPPER(nr_drupal11_hook_handler) {
+  zval* event_name = NULL;
+  zval* listener = NULL;
+
+  (void)wraprec;
+  NR_PHP_WRAPPER_REQUIRE_FRAMEWORK(NR_FW_DRUPAL8);
+
+  event_name = nr_php_arg_get(1, NR_EXECUTE_ORIG_ARGS);
+  if (0 == nr_php_is_zval_valid_string(event_name)) {
+    nrl_warning(NRL_FRAMEWORK,
+                "Drupal: Symfony EventDispatcher::addListener() does not have "
+                "an event name parameter");
+  }
+
+  listener = nr_php_arg_get(2, NR_EXECUTE_ORIG_ARGS);
+  if (0 == nr_php_is_zval_valid_array(listener)) {
+    nrl_warning(NRL_FRAMEWORK,
+                "Drupal: Symfony EventDispatcher::addListener() does not have "
+                "a listener parameter");
+  }
+
+  nrl_always("%s : EventDispather::addListener() : adding %s", __func__,
+             Z_STRVAL_P(event_name));
+  php_debug_zval_dump(listener, 1);
 }
 NR_PHP_WRAPPER_END
 
@@ -823,6 +862,10 @@ void nr_drupal8_enable(TSRMLS_D) {
      */
     nr_php_wrap_user_function(NR_PSTR("Drupal::moduleHandler"),
                               nr_drupal8_module_handler TSRMLS_CC);
+
+    nr_php_wrap_user_function(
+        NR_PSTR("Symfony\\Component\\EventDispatcher::addListener"),
+        nr_drupal11_hook_handler);
 
     /*
      * View metrics also have be handled in a Drupal 8 specific manner due to
