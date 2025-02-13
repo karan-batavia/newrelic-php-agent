@@ -686,7 +686,7 @@ NR_PHP_WRAPPER(nr_drupal11_hook_handler) {
                 "a listener parameter");
   }
 
-  nrl_always("%s : EventDispather::addListener() : adding %s", __func__,
+  nrl_always("%s : EventDispatcher::addListener() : adding %s", __func__,
              Z_STRVAL_P(event_name));
   php_debug_zval_dump(listener, 1);
 }
@@ -863,9 +863,9 @@ void nr_drupal8_enable(TSRMLS_D) {
     nr_php_wrap_user_function(NR_PSTR("Drupal::moduleHandler"),
                               nr_drupal8_module_handler TSRMLS_CC);
 
-    nr_php_wrap_user_function(
-        NR_PSTR("Symfony\\Component\\EventDispatcher::addListener"),
-        nr_drupal11_hook_handler);
+    nr_php_wrap_user_function(NR_PSTR("Symfony\\Component\\EventDispatcher\\Eve"
+                                      "ntDispatcher::addListener"),
+                              nr_drupal11_hook_handler);
 
     /*
      * View metrics also have be handled in a Drupal 8 specific manner due to
