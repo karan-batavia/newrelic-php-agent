@@ -910,7 +910,6 @@ void nr_drupal8_enable(TSRMLS_D) {
       "         $path .= '::' . $listener[1];"
       "         return $path;"
       "       }"
-      "     }"
       "     return '';"
       "   } catch (Throwable $e) {}"
       " }"
