@@ -696,9 +696,18 @@ NR_PHP_WRAPPER(nr_drupal11_hook_handler) {
       __func__, NRSAFESTR(Z_STRVAL_P(event_name)), num_args);
 
   for (size_t i = 0; i < num_args; i++) {
-    nrl_always("\t\tlistener index %zu: %s", i,
-               NRSAFESTR(Z_STRVAL_P(
-                   nr_php_zend_hash_index_find(Z_ARRVAL_P(listener), i))));
+    switch (i) {
+      case 0:
+        nrl_always("\t\tlistener index %zu: %s", i,
+                   NRSAFESTR(nr_php_class_entry_name(Z_OBJCE_P(
+                       nr_php_zend_hash_index_find(Z_ARRVAL_P(listener), i)))));
+      case 1:
+        nrl_always("\t\tlistener index %zu: %s", i,
+                   NRSAFESTR(Z_STRVAL_P(
+                       nr_php_zend_hash_index_find(Z_ARRVAL_P(listener), i))));
+      default:
+        nrl_always("error parsing listener object");
+    }
   }
 }
 NR_PHP_WRAPPER_END
