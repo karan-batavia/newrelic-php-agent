@@ -16,6 +16,7 @@
 #include "fw_support.h"
 #include "fw_symfony_common.h"
 #include "nr_txn.h"
+#include "php_zval.h"
 #include "util_logging.h"
 #include "util_memory.h"
 #include "util_strings.h"
@@ -671,6 +672,7 @@ NR_PHP_WRAPPER(nr_drupal11_hook_handler) {
   zval* event_name = NULL;
   zval* listener = NULL;
   size_t num_args = 0;
+  zval* hookpath = NULL;
 
   (void)wraprec;
   NR_PHP_WRAPPER_REQUIRE_FRAMEWORK(NR_FW_DRUPAL8);
@@ -695,20 +697,31 @@ NR_PHP_WRAPPER(nr_drupal11_hook_handler) {
       "%s : EventDispatcher::addListener() : adding %s, listener arrsize: %zu",
       __func__, NRSAFESTR(Z_STRVAL_P(event_name)), num_args);
 
+  if (nr_php_find_function("newrelic_parse_hook")) {
+    hookpath = nr_php_call(NULL, "newrelic_parse_hook", listener);
+    nrl_always("newrelic_parse_hook retval = %s", Z_STRVAL_P(hookpath));
+  } else {
+    nrl_warning(NRL_FRAMEWORK, "%s: failed to retrieve fn", __func__);
+  }
+
   for (size_t i = 0; i < num_args; i++) {
     switch (i) {
       case 0:
         nrl_always("\t\tlistener index %zu: %s", i,
                    NRSAFESTR(nr_php_class_entry_name(Z_OBJCE_P(
                        nr_php_zend_hash_index_find(Z_ARRVAL_P(listener), i)))));
+        break;
       case 1:
         nrl_always("\t\tlistener index %zu: %s", i,
                    NRSAFESTR(Z_STRVAL_P(
                        nr_php_zend_hash_index_find(Z_ARRVAL_P(listener), i))));
+        break;
       default:
         nrl_always("error parsing listener object");
+        break;
     }
   }
+  nr_php_zval_free(&hookpath);
 }
 NR_PHP_WRAPPER_END
 
@@ -882,6 +895,34 @@ void nr_drupal8_enable(TSRMLS_D) {
      */
     nr_php_wrap_user_function(NR_PSTR("Drupal::moduleHandler"),
                               nr_drupal8_module_handler TSRMLS_CC);
+    // clang-format off
+    const char* nr_injection_fn =
+      "if (!function_exists('newrelic_get_hooks')) {"
+      " function newrelic_parse_hook(callable $listener) {"
+      "   try {"
+      "       if (!is_array($listener) || !is_object($listener[0])) {"
+      "         continue;"
+      "       }"
+      "       $listener_class = get_class($listener[0]);"
+      "       $arr = explode('\\\\', $listener_class);"
+      "       if ($arr[1] === $module) {"
+      "         $path = implode('\\\\', $arr);"
+      "         $path .= '::' . $listener[1];"
+      "         return $path;"
+      "       }"
+      "     }"
+      "     return '';"
+      "   } catch (Throwable $e) {}"
+      " }"
+      "}";
+    // clang-format on
+
+    int retval = zend_eval_string(nr_injection_fn, NULL, "newrelic/Drupal");
+
+    if (SUCCESS != retval) {
+      nrl_warning(NRL_FRAMEWORK,
+                  "%s: Failed to inject hook instrumentation code", __func__);
+    }
 
     nr_php_wrap_user_function(NR_PSTR("Symfony\\Component\\EventDispatcher\\Eve"
                                       "ntDispatcher::addListener"),
