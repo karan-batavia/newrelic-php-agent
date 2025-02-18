@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "nr_axiom.h"
 #include "php_agent.h"
 #include "php_call.h"
 #include "php_hash.h"
@@ -693,6 +694,12 @@ NR_PHP_WRAPPER(nr_drupal11_hook_handler) {
   nrl_always(
       "%s : EventDispatcher::addListener() : adding %s, listener arrsize: %zu",
       __func__, NRSAFESTR(Z_STRVAL_P(event_name)), num_args);
+
+  for (size_t i = 0; i < num_args; i++) {
+    nrl_always("\t\tlistener index %zu: %s", i,
+               NRSAFESTR(Z_STRVAL_P(
+                   nr_php_zend_hash_index_find(Z_ARRVAL_P(listener), i))));
+  }
 }
 NR_PHP_WRAPPER_END
 
