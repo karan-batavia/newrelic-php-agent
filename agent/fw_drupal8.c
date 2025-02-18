@@ -898,7 +898,7 @@ void nr_drupal8_enable(TSRMLS_D) {
     // clang-format off
     const char* nr_injection_fn =
       "if (!function_exists('newrelic_get_hooks')) {"
-      " function newrelic_parse_hook(callable $listener) {"
+      " function newrelic_parse_hook(array $listener) {"
       "   try {"
       "       if (!is_array($listener) || !is_object($listener[0])) {"
       "         return '';"
