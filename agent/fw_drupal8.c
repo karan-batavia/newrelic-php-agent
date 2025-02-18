@@ -669,7 +669,7 @@ NR_PHP_WRAPPER_END
 NR_PHP_WRAPPER(nr_drupal11_hook_handler) {
   zval* event_name = NULL;
   zval* listener = NULL;
-  zval* listener_dump = NULL;
+  size_t num_args = 0;
 
   (void)wraprec;
   NR_PHP_WRAPPER_REQUIRE_FRAMEWORK(NR_FW_DRUPAL8);
@@ -688,10 +688,11 @@ NR_PHP_WRAPPER(nr_drupal11_hook_handler) {
                 "a listener parameter");
   }
 
-  listener_dump = nr_php_call(NULL, "var_dump", listener);
+  num_args = zend_hash_num_elements(Z_ARRVAL_P(listener));
 
-  nrl_always("%s : EventDispatcher::addListener() : adding %s, %s", __func__,
-             Z_STRVAL_P(event_name), Z_STRVAL_P(listener_dump));
+  nrl_always(
+      "%s : EventDispatcher::addListener() : adding %s, listener arrsize: %zu",
+      __func__, NRSAFESTR(Z_STRVAL_P(event_name)), num_args);
 }
 NR_PHP_WRAPPER_END
 
