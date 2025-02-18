@@ -901,7 +901,7 @@ void nr_drupal8_enable(TSRMLS_D) {
       " function newrelic_parse_hook(callable $listener) {"
       "   try {"
       "       if (!is_array($listener) || !is_object($listener[0])) {"
-      "         continue;"
+      "         return '';"
       "       }"
       "       $listener_class = get_class($listener[0]);"
       "       $path = $listener_class . '::' . $listener[1];"
