@@ -612,6 +612,7 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
   zend_class_entry* ce = NULL;
   zval** retval_ptr = NR_GET_RETURN_VALUE_PTR;
   zval* invoke_map = NULL;
+  zval* hook_implementation_map = NULL;
   size_t num_args = 0;
 
   NR_UNUSED_SPECIALFN;
@@ -645,6 +646,21 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
     }
   } else {
     nrl_warning(NRL_FRAMEWORK, "NULL invokeMap object property");
+  }
+
+  hook_implementation_map
+      = nr_php_get_zval_object_property(*retval_ptr, "hookImplementationsMap");
+  if (hook_implementation_map) {
+    if (nr_php_is_zval_valid_array(hook_implementation_map)) {
+      num_args = zend_hash_num_elements(Z_ARRVAL_P(hook_implementation_map));
+      nrl_always("%s: ModuleHandler->hookImplementationsMap num elements = %zu",
+                 __func__, num_args);
+    } else {
+      nrl_warning(NRL_FRAMEWORK,
+                  "hookImplementationsMap property not a valid array");
+    }
+  } else {
+    nrl_warning(NRL_FRAMEWORK, "NULL hookImplementationsMap object property");
   }
 
   nr_drupal8_add_method_callback(ce, NR_PSTR("getimplementations"),
