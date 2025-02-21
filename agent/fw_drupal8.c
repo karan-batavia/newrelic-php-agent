@@ -713,7 +713,7 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
             method_str = nr_strdup(ZEND_STRING_VALUE(method_key));
             module_str = nr_strdup(Z_STRVAL_P(module_val));
 
-            nr_strcat(hookpath, class_str);
+            hookpath = nr_strdup(class_str);
             nr_strcat(hookpath, "::");
             nr_strcat(hookpath, method_str);
 
