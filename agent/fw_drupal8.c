@@ -695,6 +695,13 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
           ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(class_val), key_num, method_key,
                                     module_val) {
             (void)key_num;
+
+            nr_free(hook_str);
+            nr_free(class_str);
+            nr_free(method_str);
+            nr_free(module_str);
+            nr_free(hookpath);
+
             if ((NULL == method_key)
                 || (0 == nr_php_is_zval_valid_string(module_val))) {
               nrl_warning(NRL_FRAMEWORK,
@@ -723,12 +730,6 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
             nr_php_wrap_user_function_drupal(hookpath, nr_strlen(hookpath),
                                              module_str, nr_strlen(module_str),
                                              hook_str, nr_strlen(hook_str));
-
-            nr_free(hook_str);
-            nr_free(class_str);
-            nr_free(method_str);
-            nr_free(module_str);
-            nr_free(hookpath);
           }
           ZEND_HASH_FOREACH_END();
         }
