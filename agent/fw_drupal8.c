@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nr_axiom.h"
 #include "php_agent.h"
 #include "php_call.h"
 #include "php_compat.h"
@@ -728,9 +727,9 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
             nrl_always("wrapping %s: hook = %s, module=%s", hookpath, hook_str,
                        module_str);
 
-            nr_php_wrap_user_function_drupal(NR_PSTR(hookpath), module_str,
-                                             nr_strlen(module_str), hook_str,
-                                             nr_strlen(hook_str));
+            nr_php_wrap_user_function_drupal(hookpath, nr_strlen(hookpath) - 1,
+                                             module_str, nr_strlen(module_str),
+                                             hook_str, nr_strlen(hook_str));
           }
           ZEND_HASH_FOREACH_END();
         }
