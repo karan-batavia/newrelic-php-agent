@@ -77,7 +77,8 @@ nruserfn_t* nr_php_wrap_user_function_drupal(const char* name,
                                              nr_string_len_t hook_len
                                                  TSRMLS_DC) {
   nruserfn_t* wraprec;
-  nrl_always("%s: %s, %s, %s", __func__, name, module, hook);
+  nrl_always("%s: %s (%d), %s (%zu), %s (%zu)", __func__, name, namelen, module,
+             module_len, hook, hook_len);
 
   wraprec = nr_php_wrap_user_function(name, namelen,
                                       nr_drupal_wrap_module_hook TSRMLS_CC);
