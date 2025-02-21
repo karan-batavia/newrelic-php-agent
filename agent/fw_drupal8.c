@@ -5,6 +5,7 @@
 
 #include "php_agent.h"
 #include "php_call.h"
+#include "php_compat.h"
 #include "php_hash.h"
 #include "php_user_instrument.h"
 #include "php_execute.h"
@@ -625,6 +626,12 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
   zval* module_val = NULL;
   zend_ulong key_num = 0;
 
+  char* hook_str = NULL;
+  char* class_str = NULL;
+  char* method_str = NULL;
+  char* module_str = NULL;
+  char* hookpath = NULL;
+
   NR_UNUSED_SPECIALFN;
   (void)wraprec;
 
@@ -700,6 +707,25 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
                 "method_key = %s, module_val = %s",
                 ZEND_STRING_VALUE(hook_key), ZEND_STRING_VALUE(class_key),
                 ZEND_STRING_VALUE(method_key), Z_STRVAL_P(module_val));
+
+            hook_str = nr_strdup(ZEND_STRING_VALUE(hook_key));
+            class_str = nr_strdup(ZEND_STRING_VALUE(class_key));
+            method_str = nr_strdup(ZEND_STRING_VALUE(method_key));
+            module_str = nr_strdup(Z_STRVAL_P(module_val));
+
+            nr_strcat(hookpath, class_str);
+            nr_strcat(hookpath, "::");
+            nr_strcat(hookpath, method_str);
+
+            nr_php_wrap_user_function_drupal(hookpath, nr_strlen(hookpath),
+                                             module_str, nr_strlen(module_str),
+                                             hook_str, nr_strlen(hook_str));
+
+            nr_free(hook_str);
+            nr_free(class_str);
+            nr_free(method_str);
+            nr_free(module_str);
+            nr_free(hookpath);
           }
           ZEND_HASH_FOREACH_END();
         }
@@ -715,10 +741,17 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
     nrl_warning(NRL_FRAMEWORK, "NULL hookImplementationsMap object property");
   }
 
-  nr_drupal8_add_method_callback(ce, NR_PSTR("getimplementations"),
-                                 nr_drupal8_post_get_implementations TSRMLS_CC);
-  nr_drupal8_add_method_callback(ce, NR_PSTR("implementshook"),
-                                 nr_drupal8_post_implements_hook TSRMLS_CC);
+  nr_free(hook_str);
+  nr_free(class_str);
+  nr_free(method_str);
+  nr_free(module_str);
+  nr_free(hookpath);
+
+  // nr_drupal8_add_method_callback(ce, NR_PSTR("getimplementations"),
+  //                                nr_drupal8_post_get_implementations
+  //                                TSRMLS_CC);
+  // nr_drupal8_add_method_callback(ce, NR_PSTR("implementshook"),
+  //                                nr_drupal8_post_implements_hook TSRMLS_CC);
   /* Drupal 9.4 introduced a replacement method for getImplentations */
 #if ZEND_MODULE_API_NO >= ZEND_8_0_X_API_NO \
     && !defined OVERWRITE_ZEND_EXECUTE_DATA
