@@ -77,6 +77,7 @@ nruserfn_t* nr_php_wrap_user_function_drupal(const char* name,
                                              nr_string_len_t hook_len
                                                  TSRMLS_DC) {
   nruserfn_t* wraprec;
+  nrl_always("%s: %s, %s, %s", __func__, name, module, hook);
 
   wraprec = nr_php_wrap_user_function(name, namelen,
                                       nr_drupal_wrap_module_hook TSRMLS_CC);
@@ -177,8 +178,9 @@ nr_status_t module_invoke_all_parse_module_and_hook_from_strings(
     nrl_verbosedebug(NRL_FRAMEWORK,
                      "%s: module len is %d; ; "
                      "hook='%.*s'; module_hook='%.*s'",
-                     __func__, (int)module_len, NRSAFELEN(hook_len), NRSAFESTR(hook),
-                     NRSAFELEN(module_hook_len), NRSAFESTR(module_hook));
+                     __func__, (int)module_len, NRSAFELEN(hook_len),
+                     NRSAFESTR(hook), NRSAFELEN(module_hook_len),
+                     NRSAFESTR(module_hook));
 
     return NR_FAILURE;
   }
