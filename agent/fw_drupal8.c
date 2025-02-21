@@ -720,14 +720,12 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
             method_str = nr_strdup(ZEND_STRING_VALUE(method_key));
             module_str = nr_strdup(Z_STRVAL_P(module_val));
 
-            hookpath = nr_strdup(class_str);
-            nr_strcat(hookpath, "::");
-            nr_strcat(hookpath, method_str);
+            hookpath = nr_formatf("%s::%s", class_str, method_str);
 
             nrl_always("wrapping %s: hook = %s, module=%s", hookpath, hook_str,
                        module_str);
 
-            nr_php_wrap_user_function_drupal(hookpath, nr_strlen(hookpath) - 1,
+            nr_php_wrap_user_function_drupal(hookpath, nr_strlen(hookpath),
                                              module_str, nr_strlen(module_str),
                                              hook_str, nr_strlen(hook_str));
           }
