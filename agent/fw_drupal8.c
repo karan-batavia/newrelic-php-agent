@@ -720,13 +720,12 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
             method_str = nr_strdup(ZEND_STRING_VALUE(method_key));
             module_str = nr_strdup(Z_STRVAL_P(module_val));
 
-            if (NULL
-                == nr_strstr(nr_string_to_lowercase(class_key),
-                             nr_string_to_lowercase(
-                                 "Drupal\\Core\\Extension\\ProceduralCall"))) {
-              hookpath = nr_formatf("%s::%s", class_str, method_str);
-            } else {
+            if (0
+                == nr_stricmp(ZEND_STRING_VALUE(class_key),
+                              "Drupal\\Core\\Extension\\ProceduralCall")) {
               hookpath = nr_formatf("%s", method_str);
+            } else {
+              hookpath = nr_formatf("%s::%s", class_str, method_str);
             }
 
             nrl_always("wrapping %s: hook = %s, module=%s", hookpath, hook_str,
