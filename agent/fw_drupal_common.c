@@ -77,12 +77,13 @@ nruserfn_t* nr_php_wrap_user_function_drupal(const char* name,
                                              nr_string_len_t hook_len
                                                  TSRMLS_DC) {
   nruserfn_t* wraprec;
-  nrl_always("%s: %s (%d), %s (%zu), %s (%zu)", __func__, name, namelen, module,
-             module_len, hook, hook_len);
+  // nrl_always("%s: %s (%d), %s (%zu), %s (%zu)", __func__, name, namelen,
+  // module,
+  //            module_len, hook, hook_len);
 
   wraprec = nr_php_wrap_user_function(name, namelen,
                                       nr_drupal_wrap_module_hook TSRMLS_CC);
-  nrl_always("here 1");
+  // nrl_always("here 1");
   if (wraprec) {
     /*
      * As wraprecs can be reused, we need to free any previous hook or module
@@ -90,13 +91,13 @@ nruserfn_t* nr_php_wrap_user_function_drupal(const char* name,
      */
     nr_free(wraprec->drupal_hook);
     nr_free(wraprec->drupal_module);
-    nrl_always("here 2");
+    // nrl_always("here 2");
 
     wraprec->drupal_hook = nr_strndup(hook, hook_len);
     wraprec->drupal_hook_len = hook_len;
     wraprec->drupal_module = nr_strndup(module, module_len);
     wraprec->drupal_module_len = module_len;
-    nrl_always("here 3");
+    // nrl_always("here 3");
   }
 
   return wraprec;

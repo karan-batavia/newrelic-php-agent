@@ -614,9 +614,7 @@ NR_PHP_WRAPPER_END
 NR_PHP_WRAPPER(nr_drupal8_module_handler) {
   zend_class_entry* ce = NULL;
   zval** retval_ptr = NR_GET_RETURN_VALUE_PTR;
-  // zval* invoke_map = NULL;
   zval* hook_implementation_map = NULL;
-  size_t num_args = 0;
 
   nr_php_string_hash_key_t* hook_key = NULL;
   zval* hook_val = NULL;
@@ -652,33 +650,21 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
 
   ce = Z_OBJCE_P(*retval_ptr);
 
-  // invoke_map = nr_php_get_zval_object_property(*retval_ptr, "invokeMap");
-  // if (invoke_map) {
-  //   if (nr_php_is_zval_valid_array(invoke_map)) {
-  //     num_args = zend_hash_num_elements(Z_ARRVAL_P(invoke_map));
-  //     nrl_always("%s: ModuleHandler->invokeMap num elements = %zu", __func__,
-  //                num_args);
-  //   } else {
-  //     nrl_warning(NRL_FRAMEWORK, "invoke_map property not a valid array");
-  //   }
-  // } else {
-  //   nrl_warning(NRL_FRAMEWORK, "NULL invokeMap object property");
-  // }
-
   hook_implementation_map
       = nr_php_get_zval_object_property(*retval_ptr, "hookImplementationsMap");
   if (hook_implementation_map) {
     if (nr_php_is_zval_valid_array(hook_implementation_map)) {
-      num_args = zend_hash_num_elements(Z_ARRVAL_P(hook_implementation_map));
-      nrl_always("%s: ModuleHandler->hookImplementationsMap num elements = %zu",
-                 __func__, num_args);
+      // num_args = zend_hash_num_elements(Z_ARRVAL_P(hook_implementation_map));
+      // nrl_always("%s: ModuleHandler->hookImplementationsMap num elements =
+      // %zu",
+      //            __func__, num_args);
 
       ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(hook_implementation_map), key_num,
                                 hook_key, hook_val) {
         (void)key_num;
         if ((NULL == hook_key) || (0 == nr_php_is_zval_valid_array(hook_val))) {
           nrl_warning(NRL_FRAMEWORK,
-                      "hook_implementation_map(hook): skipping element");
+                      "hook_implementation_map[hook]: skipping element");
           continue;
         }
 
@@ -688,7 +674,7 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
           if ((NULL == class_key)
               || (0 == nr_php_is_zval_valid_array(class_val))) {
             nrl_warning(NRL_FRAMEWORK,
-                        "hook_implementation_map(class): skipping element");
+                        "hook_implementation_map[class]: skipping element");
             continue;
           }
 
@@ -705,15 +691,15 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
             if ((NULL == method_key)
                 || (0 == nr_php_is_zval_valid_string(module_val))) {
               nrl_warning(NRL_FRAMEWORK,
-                          "hook_implementation_map(method): skipping element");
+                          "hook_implementation_map[method]: skipping element");
               continue;
             }
 
-            nrl_always(
-                "hookImplementationsMap: hook_key = %s, class_key = %s, "
-                "method_key = %s, module_val = %s",
-                ZEND_STRING_VALUE(hook_key), ZEND_STRING_VALUE(class_key),
-                ZEND_STRING_VALUE(method_key), Z_STRVAL_P(module_val));
+            // nrl_always(
+            //     "hookImplementationsMap: hook_key = %s, class_key = %s, "
+            //     "method_key = %s, module_val = %s",
+            //     ZEND_STRING_VALUE(hook_key), ZEND_STRING_VALUE(class_key),
+            //     ZEND_STRING_VALUE(method_key), Z_STRVAL_P(module_val));
 
             hook_str = nr_strdup(ZEND_STRING_VALUE(hook_key));
             class_str = nr_strdup(ZEND_STRING_VALUE(class_key));
@@ -728,8 +714,9 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
               hookpath = nr_formatf("%s::%s", class_str, method_str);
             }
 
-            nrl_always("wrapping %s: hook = %s, module=%s", hookpath, hook_str,
-                       module_str);
+            // nrl_always("wrapping %s: hook = %s, module=%s", hookpath,
+            // hook_str,
+            //            module_str);
 
             nr_php_wrap_user_function_drupal(hookpath, nr_strlen(hookpath),
                                              module_str, nr_strlen(module_str),
@@ -755,11 +742,10 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
   nr_free(module_str);
   nr_free(hookpath);
 
-  // nr_drupal8_add_method_callback(ce, NR_PSTR("getimplementations"),
-  //                                nr_drupal8_post_get_implementations
-  //                                TSRMLS_CC);
-  // nr_drupal8_add_method_callback(ce, NR_PSTR("implementshook"),
-  //                                nr_drupal8_post_implements_hook TSRMLS_CC);
+  nr_drupal8_add_method_callback(ce, NR_PSTR("getimplementations"),
+                                 nr_drupal8_post_get_implementations TSRMLS_CC);
+  nr_drupal8_add_method_callback(ce, NR_PSTR("implementshook"),
+                                 nr_drupal8_post_implements_hook TSRMLS_CC);
   /* Drupal 9.4 introduced a replacement method for getImplentations */
 #if ZEND_MODULE_API_NO >= ZEND_8_0_X_API_NO \
     && !defined OVERWRITE_ZEND_EXECUTE_DATA
