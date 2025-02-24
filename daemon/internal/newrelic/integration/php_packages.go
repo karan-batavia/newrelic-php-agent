@@ -366,6 +366,8 @@ func (pkgs *PhpPackagesCollection) GatherInstalledPackages() ([]PhpPackage, erro
 				} else {
 					version = v.Version
 				}
+				// remove any additional information extracted (hashes, etc)
+				version = strings.Split(version, " ")[0]
 				pkgs.packages = append(pkgs.packages, PhpPackage{v.Name, version})
 				//fmt.Printf("   -> %s in supported!\n", v.Name)
 			} else {
