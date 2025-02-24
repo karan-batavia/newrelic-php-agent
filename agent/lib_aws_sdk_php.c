@@ -321,7 +321,7 @@ void nr_lib_aws_sdk_php_lambda_handle(nr_segment_t* auto_segment,
     return;
   }
 
-  if (NULL == retval_ptr) {
+  if (NULL == *retval_ptr) {
     /* Do not instrument when an exception has happened */
     return;
   }
@@ -362,17 +362,19 @@ void nr_lib_aws_sdk_php_lambda_handle(nr_segment_t* auto_segment,
   nr_segment_traces_add_cloud_attributes(external_segment, &cloud_attrs);
   nr_segment_external_params_t external_params = {.library = "aws_sdk"};
   zval* data = nr_php_get_zval_object_property(*retval_ptr, "data");
-  if (NULL != data && IS_ARRAY == Z_TYPE_P(data)) {
+  if (nr_php_is_zval_valid_array(data)) {
     zval* status_code = nr_php_zend_hash_find(Z_ARRVAL_P(data), "StatusCode");
-    if (NULL != status_code && IS_LONG == Z_TYPE_P(status_code)) {
+    if (nr_php_is_zval_valid_integer(status_code)) {
       external_params.status = Z_LVAL_P(status_code);
     }
     zval* metadata = nr_php_zend_hash_find(Z_ARRVAL_P(data), "@metadata");
-    if (NULL != metadata  && IS_REFERENCE == Z_TYPE_P(metadata)
-        && IS_ARRAY == Z_TYPE_P(Z_REFVAL_P(metadata))) {
-      zval* uri = nr_php_zend_hash_find(Z_ARRVAL_P(Z_REFVAL_P(metadata)), "effectiveUri");
-      if (NULL != uri && IS_STRING == Z_TYPE_P(uri)) {
-        external_params.uri = Z_STRVAL_P(uri);
+    if (NULL != metadata  && IS_REFERENCE == Z_TYPE_P(metadata)) {
+      metadata = Z_REFVAL_P(metadata);
+      if (IS_ARRAY == Z_TYPE_P(metadata)) {
+        zval* uri = nr_php_zend_hash_find(Z_ARRVAL_P(metadata), "effectiveUri");
+        if (nr_php_is_zval_valid_string(uri)) {
+          external_params.uri = Z_STRVAL_P(uri);
+        }
       }
     }
   }
@@ -391,15 +393,15 @@ void nr_aws_lambda_invoke(NR_EXECUTE_PROTO, nr_segment_cloud_attrs_t* cloud_attr
   char* accountID = NULL;
 
   /* verify arguments */
-  if (NULL == call_args || IS_ARRAY != Z_TYPE_P(call_args)) {
+  if (!nr_php_is_zval_valid_array(call_args)) {
     return;
   }
   zval* lambda_args = nr_php_zend_hash_index_find(Z_ARRVAL_P(call_args), 0);
-  if (NULL == lambda_args || IS_ARRAY != Z_TYPE_P(lambda_args)) {
+  if (!nr_php_is_zval_valid_array(lambda_args)) {
     return;
   }
   zval* lambda_name = nr_php_zend_hash_find(Z_ARRVAL_P(lambda_args), "FunctionName");
-  if (NULL == lambda_name || IS_STRING != Z_TYPE_P(lambda_name)) {
+  if (!nr_php_is_zval_valid_string(lambda_name)) {
     return;
   }
 
@@ -431,7 +433,8 @@ void nr_aws_lambda_invoke(NR_EXECUTE_PROTO, nr_segment_cloud_attrs_t* cloud_attr
     accountID = NRINI(aws_account_id);
   }
   if (nr_strempty(region)) {
-    region_zval = nr_php_call(this_obj, "getRegion");
+    region_zval
+      = nr_php_get_zval_object_property(this_obj, "region");
     if (nr_php_is_zval_valid_string(region_zval)) {
       region = Z_STRVAL_P(region_zval);
     }
