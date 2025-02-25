@@ -381,6 +381,19 @@ void nr_lib_aws_sdk_php_lambda_handle(nr_segment_t* auto_segment,
   nr_segment_external_end(&auto_segment, &external_params);
 }
 
+/* This stores the compiled regex to parse AWS ARNs. The compilation happens when
+ * it is first needed and is destroyed in mshutdown
+ */
+static nr_regex_t* aws_arn_regex;
+
+static void nr_aws_sdk_compile_regex(void) {
+  aws_arn_regex = nr_regex_create(AWS_ARN_REGEX, 0, 0);
+}
+
+void nr_aws_sdk_mshutdown(void) {
+  nr_regex_destroy(&aws_arn_regex);
+}
+
 void nr_aws_lambda_invoke(NR_EXECUTE_PROTO, nr_segment_cloud_attrs_t* cloud_attrs) {
   zval* call_args = nr_php_get_user_func_arg(2, NR_EXECUTE_ORIG_ARGS);
   zval* this_obj = NR_PHP_USER_FN_THIS();
@@ -405,14 +418,14 @@ void nr_aws_lambda_invoke(NR_EXECUTE_PROTO, nr_segment_cloud_attrs_t* cloud_attr
     return;
   }
 
-  /* Compile the regex */
-  if (NULL == NRPRG(aws_arn_regex)) {
-    NRPRG(aws_arn_regex) = nr_regex_create(AWS_ARN_REGEX, 0, 0);
+  /* Ensure regex exists */
+  if (NULL == aws_arn_regex) {
+    nr_aws_sdk_compile_regex();
   }
 
   /* Extract all information possible from the passed lambda name via regex */
   nr_regex_substrings_t* matches =
-      nr_regex_match_capture(NRPRG(aws_arn_regex),
+      nr_regex_match_capture(aws_arn_regex,
                              Z_STRVAL_P(lambda_name),
                              Z_STRLEN_P(lambda_name));
   function_name = nr_regex_substrings_get_named(matches, "functionName");
