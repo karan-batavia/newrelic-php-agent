@@ -439,6 +439,10 @@ void nr_aws_lambda_invoke(NR_EXECUTE_PROTO, nr_segment_cloud_attrs_t* cloud_attr
      * Cannot get the needed data. Function name is required in the
      * argument, so this won't happen in normal operation
      */
+    nr_free(function_name);
+    nr_free(accountID);
+    nr_free(region);
+    nr_free(qualifier);
     nr_regex_substrings_destroy(&matches);
     return;
   }
@@ -474,6 +478,10 @@ void nr_aws_lambda_invoke(NR_EXECUTE_PROTO, nr_segment_cloud_attrs_t* cloud_attr
   }
 
   nr_regex_substrings_destroy(&matches);
+  nr_free(function_name);
+  nr_free(accountID);
+  nr_free(region);
+  nr_free(qualifier);
   nr_php_zval_free(&region_zval);
   nr_php_zval_free(&qualifier_zval);
 }
