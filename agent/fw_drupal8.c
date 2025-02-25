@@ -630,6 +630,8 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
   char* module_str = NULL;
   char* hookpath = NULL;
 
+  bool skip_invokeall = TRUE;
+
   NR_UNUSED_SPECIALFN;
   (void)wraprec;
 
@@ -665,6 +667,7 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
         if ((NULL == hook_key) || (0 == nr_php_is_zval_valid_array(hook_val))) {
           nrl_warning(NRL_FRAMEWORK,
                       "hook_implementation_map[hook]: skipping element");
+          skip_invokeall = FALSE;
           continue;
         }
 
@@ -675,6 +678,7 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
               || (0 == nr_php_is_zval_valid_array(class_val))) {
             nrl_warning(NRL_FRAMEWORK,
                         "hook_implementation_map[class]: skipping element");
+            skip_invokeall = FALSE;
             continue;
           }
 
@@ -692,6 +696,7 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
                 || (0 == nr_php_is_zval_valid_string(module_val))) {
               nrl_warning(NRL_FRAMEWORK,
                           "hook_implementation_map[method]: skipping element");
+              skip_invokeall = FALSE;
               continue;
             }
 
@@ -731,9 +736,11 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
     } else {
       nrl_warning(NRL_FRAMEWORK,
                   "hookImplementationsMap property not a valid array");
+      skip_invokeall = FALSE;
     }
   } else {
     nrl_warning(NRL_FRAMEWORK, "NULL hookImplementationsMap object property");
+    skip_invokeall = FALSE;
   }
 
   nr_free(hook_str);
@@ -749,9 +756,11 @@ NR_PHP_WRAPPER(nr_drupal8_module_handler) {
   /* Drupal 9.4 introduced a replacement method for getImplentations */
 #if ZEND_MODULE_API_NO >= ZEND_8_0_X_API_NO \
     && !defined OVERWRITE_ZEND_EXECUTE_DATA
-  nr_drupal8_add_method_callback_before_after_clean(
-      ce, NR_PSTR("invokeallwith"), nr_drupal94_invoke_all_with,
-      nr_drupal94_invoke_all_with_after, nr_drupal94_invoke_all_with_clean);
+  if (!skip_invokeall) {
+    nr_drupal8_add_method_callback_before_after_clean(
+        ce, NR_PSTR("invokeallwith"), nr_drupal94_invoke_all_with,
+        nr_drupal94_invoke_all_with_after, nr_drupal94_invoke_all_with_clean);
+  }
 #else
   nr_drupal8_add_method_callback(ce, NR_PSTR("invokeallwith"),
                                  nr_drupal94_invoke_all_with TSRMLS_CC);
