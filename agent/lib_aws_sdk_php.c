@@ -404,6 +404,7 @@ void nr_aws_lambda_invoke(NR_EXECUTE_PROTO, nr_segment_cloud_attrs_t* cloud_attr
   char* qualifier = NULL;
   zval* qualifier_zval = NULL;
   char* accountID = NULL;
+  bool using_account_id_ini = false;
 
   /* verify arguments */
   if (!nr_php_is_zval_valid_array(call_args)) {
@@ -448,6 +449,7 @@ void nr_aws_lambda_invoke(NR_EXECUTE_PROTO, nr_segment_cloud_attrs_t* cloud_attr
   }
   if (nr_strempty(accountID)) {
     accountID = NRINI(aws_account_id);
+    using_account_id_ini = true;
   }
   if (nr_strempty(region)) {
     region_zval
@@ -479,7 +481,9 @@ void nr_aws_lambda_invoke(NR_EXECUTE_PROTO, nr_segment_cloud_attrs_t* cloud_attr
 
   nr_regex_substrings_destroy(&matches);
   nr_free(function_name);
-  nr_free(accountID);
+  if (!using_account_id_ini) {
+    nr_free(accountID);
+  }
   nr_free(region);
   nr_free(qualifier);
   nr_php_zval_free(&region_zval);
