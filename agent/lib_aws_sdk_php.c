@@ -448,6 +448,7 @@ void nr_aws_lambda_invoke(NR_EXECUTE_PROTO, nr_segment_cloud_attrs_t* cloud_attr
     return;
   }
   if (nr_strempty(accountID)) {
+    nr_free(accountID);
     accountID = NRINI(aws_account_id);
     using_account_id_ini = true;
   }
