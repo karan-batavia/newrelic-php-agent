@@ -340,7 +340,7 @@ void nr_lib_aws_sdk_php_lambda_handle(nr_segment_t* auto_segment,
 
   /* reconstruct the ARN */
   nr_aws_lambda_invoke(NR_EXECUTE_ORIG_ARGS, &cloud_attrs);
-  if (!cloud_attrs.cloud_resource_id) {
+  if (NULL == cloud_attrs.cloud_resource_id) {
     /* we do not want to instrument if we cannot reconstruct the ARN */
     return;
   }
@@ -352,6 +352,7 @@ void nr_lib_aws_sdk_php_lambda_handle(nr_segment_t* auto_segment,
    */
   external_segment = nr_segment_start(NRPRG(txn), NULL, NULL);
   if (NULL == external_segment) {
+    nr_free(cloud_attrs.cloud_resource_id);
     return;
   }
   /* re-use start time from auto_segment started in func_begin */
@@ -379,6 +380,7 @@ void nr_lib_aws_sdk_php_lambda_handle(nr_segment_t* auto_segment,
     }
   }
   nr_segment_external_end(&auto_segment, &external_params);
+  nr_free(cloud_attrs.cloud_resource_id);
 }
 
 /* This stores the compiled regex to parse AWS ARNs. The compilation happens when
